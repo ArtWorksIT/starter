@@ -13,6 +13,8 @@ class InstallCommand extends Command
 {
     private ?Filesystem $filesystem = null;
 
+    private bool $pendingComposerScripts = false;
+
     /**
      * @var array<int, array<string, string|array>>
      */
@@ -87,6 +89,8 @@ class InstallCommand extends Command
 
             return self::FAILURE;
         }
+
+        $this->runPostComposerScripts(false);
 
         if ($installSeo || $installBlog || $installCareers) {
             $this->ensureFilamentPanel();
@@ -208,6 +212,8 @@ class InstallCommand extends Command
         if ($installSeo) {
             $this->seedStarterSeo();
         }
+
+        $this->runPostComposerScripts(true);
 
         $this->info("Starter install complete.");
 
@@ -1428,16 +1434,7 @@ class InstallCommand extends Command
 
         $this->info("Installing SEO dependencies...");
 
-        $process = new Process(
-            array_merge(["composer", "require"], $requireList),
-        );
-        $process->setTty(Process::isTtySupported());
-        $process->setTimeout(null);
-        $process->run(function (string $type, string $buffer): void {
-            $this->output->write($buffer);
-        });
-
-        if (!$process->isSuccessful()) {
+        if (! $this->runComposerRequirePackages($requireList)) {
             $this->error("Failed to install SEO dependencies.");
 
             return false;
@@ -1647,20 +1644,7 @@ class InstallCommand extends Command
 
     private function runComposerRequire(string $package): bool
     {
-        $process = new Process(['composer', 'require', $package]);
-        $process->setTty(Process::isTtySupported());
-        $process->setTimeout(null);
-        $process->run(function (string $type, string $buffer): void {
-            $this->output->write($buffer);
-        });
-
-        if (! $process->isSuccessful()) {
-            return false;
-        }
-
-        $this->newLine();
-
-        return true;
+        return $this->runComposerRequirePackages([$package]);
     }
 
     private function ensureFilamentPanel(): void
@@ -1789,14 +1773,7 @@ class InstallCommand extends Command
 
         $this->info('Installing '.$label.' dependencies...');
 
-        $process = new Process(array_merge(['composer', 'require'], $requireList));
-        $process->setTty(Process::isTtySupported());
-        $process->setTimeout(null);
-        $process->run(function (string $type, string $buffer): void {
-            $this->output->write($buffer);
-        });
-
-        if (! $process->isSuccessful()) {
+        if (! $this->runComposerRequirePackages($requireList)) {
             $this->error('Failed to install '.$label.' dependencies.');
 
             return false;
@@ -1805,6 +1782,57 @@ class InstallCommand extends Command
         $this->newLine();
 
         return true;
+    }
+
+    /**
+     * @param string[] $requireList
+     */
+    private function runComposerRequirePackages(array $requireList): bool
+    {
+        $process = new Process(array_merge(
+            ['composer', 'require', '--no-interaction', '--no-scripts'],
+            $requireList,
+        ));
+        $process->setTty(Process::isTtySupported());
+        $process->setTimeout(null);
+        $process->run(function (string $type, string $buffer): void {
+            $this->output->write($buffer);
+        });
+
+        if (! $process->isSuccessful()) {
+            return false;
+        }
+
+        $this->pendingComposerScripts = true;
+        $this->newLine();
+
+        return true;
+    }
+
+    private function runPostComposerScripts(bool $runFilamentUpgrade): void
+    {
+        if (! $this->pendingComposerScripts) {
+            return;
+        }
+
+        if (! $this->runArtisan(['package:discover', '--ansi'])) {
+            $this->warn('Failed to run package discovery after installing dependencies.');
+
+            return;
+        }
+
+        if ($runFilamentUpgrade && $this->shouldRunFilamentUpgrade()) {
+            if (! $this->runArtisan(['filament:upgrade'])) {
+                $this->warn('Failed to run Filament upgrade after installing dependencies.');
+            }
+        }
+
+        $this->pendingComposerScripts = false;
+    }
+
+    private function shouldRunFilamentUpgrade(): bool
+    {
+        return in_array('filament/filament', $this->installedPackages(), true);
     }
 
     private function seedStarterUser(): void
