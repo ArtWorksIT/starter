@@ -1128,7 +1128,7 @@ class InstallCommand extends Command
 
     private function seedCareersIndexSeo(): void
     {
-        if (! class_exists(\App\Models\SiteSeo::class)) {
+        if (! $this->siteSeoModelExists()) {
             return;
         }
 
@@ -1147,7 +1147,7 @@ class InstallCommand extends Command
 
     private function seedBlogIndexSeo(): void
     {
-        if (! class_exists(\App\Models\SiteSeo::class)) {
+        if (! $this->siteSeoModelExists()) {
             return;
         }
 
@@ -1246,6 +1246,11 @@ class InstallCommand extends Command
 
         $filesystem->put($path, $updated);
         $this->info('StarterSeoSeeder updated with additional SEO entries.');
+    }
+
+    private function siteSeoModelExists(): bool
+    {
+        return $this->filesystem()->exists(app_path('Models/SiteSeo.php'));
     }
 
     private function ensureDatabaseSeederCalls(): void
