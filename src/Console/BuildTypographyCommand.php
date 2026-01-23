@@ -135,14 +135,7 @@ class BuildTypographyCommand extends Command
     private function defaultCsvContents(): string
     {
         return implode("\n", [
-            '1920,768,480',
-            '144,84,64',
-            '144,84,60',
-            '144,80,64',
-            '96,56,40',
-            '64,40,32',
-            '32,24,20',
-            '18,16,14',
+            '1920,1024,640',
             '',
         ]);
     }
