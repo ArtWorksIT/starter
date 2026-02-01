@@ -10,8 +10,10 @@ Starter scaffolding package for Laravel websites. It generates routes, controlle
 ## Installation
 
 ```bash
-composer require artworksit/starter
+composer require artworksit/starter --dev
 ```
+
+This package is intended for scaffolding during development and does not need to be installed in production.
 
 ## Usage
 
