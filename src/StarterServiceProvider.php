@@ -4,6 +4,7 @@ namespace Artworksit\Starter;
 
 use Illuminate\Support\ServiceProvider;
 use Artworksit\Starter\Console\BuildTypographyCommand;
+use Artworksit\Starter\Console\GenerateOgImageCommand;
 use Artworksit\Starter\Console\InstallCommand;
 
 class StarterServiceProvider extends ServiceProvider
@@ -22,6 +23,7 @@ class StarterServiceProvider extends ServiceProvider
 
             $this->commands([
                 BuildTypographyCommand::class,
+                GenerateOgImageCommand::class,
                 InstallCommand::class,
             ]);
         }

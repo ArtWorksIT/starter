@@ -80,9 +80,9 @@ class BlogPostResource extends Resource
                                     ->columnSpanFull(),
                                 SpatieMediaLibraryFileUpload::make('og')
                                     ->collection('og')
-                                    ->helperText('Recommended size: 1200×630 (1.91:1).')
+                                    ->helperText('Recommended size: 1200x630 (1200:630).')
                                     ->image()
-                                    ->imageAspectRatio('1.91:1')
+                                    ->imageAspectRatio('1200:630')
                                     ->automaticallyOpenImageEditorForAspectRatio()
                                     ->columnSpanFull(),
                             ]),

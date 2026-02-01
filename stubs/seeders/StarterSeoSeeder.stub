@@ -6,6 +6,8 @@ namespace Database\Seeders;
 
 use App\Models\SiteSeo;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 class StarterSeoSeeder extends Seeder
 {
@@ -16,10 +18,32 @@ class StarterSeoSeeder extends Seeder
         ];
 
         foreach ($entries as $entry) {
-            SiteSeo::query()->updateOrCreate(
+            $data = Arr::except($entry, ['og_image']);
+            $record = SiteSeo::query()->updateOrCreate(
                 ['url' => $entry['url']],
-                $entry,
+                $data,
             );
+            // $slug = Str::slug(trim($entry['url'], '/'));
+            // $slug = $slug === '' ? 'home' : $slug;
+            // $ogImage = $entry['og_image'] ?? null; // e.g. public_path('og/blog.png')
+            // if ($ogImage !== null && Str::startsWith($ogImage, '/')) {
+            //     $ogPath = $ogImage;
+            // } else {
+            //     $normalized = $ogImage ?? ($slug.'.png');
+            //     $normalized = ltrim($normalized, '/');
+            //     if (Str::startsWith($normalized, 'public/')) {
+            //         $normalized = substr($normalized, 7);
+            //     }
+            //     if (Str::startsWith($normalized, 'og/')) {
+            //         $normalized = substr($normalized, 3);
+            //     }
+            //     $ogPath = public_path('og/'.$normalized);
+            // }
+            // if (!file_exists($ogPath)) {
+            //     $this->command?->warn("Skipped OG image for {$entry['url']}: {$ogPath}");
+            //     continue;
+            // }
+            // $record->addMedia($ogPath)->toMediaCollection('og');
         }
     }
 }

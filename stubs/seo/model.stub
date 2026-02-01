@@ -35,4 +35,9 @@ class SiteSeo extends Model implements HasMedia
             'meta_structure' => 'array',
         ];
     }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('og')->singleFile();
+    }
 }

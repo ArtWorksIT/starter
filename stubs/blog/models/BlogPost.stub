@@ -48,6 +48,12 @@ class BlogPost extends Model implements HasMedia
         ];
     }
 
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('cover')->singleFile();
+        $this->addMediaCollection('og')->singleFile();
+    }
+
     public function author(): BelongsTo
     {
         return $this->belongsTo(BlogAuthor::class, 'blog_author_id');

@@ -8,11 +8,18 @@
 @endphp
 
 @if ($seo)
-    @if ($seo->meta_title)
+    @php
+        $metaTitle = $seo->meta_title;
+        $metaDescription = $seo->meta_description;
+        $metaUrl = url()->current();
+        $ogImage = $seo->getFirstMediaUrl('og');
+    @endphp
+
+    @if ($metaTitle)
         <title>{{ $seo->meta_title }}</title>
     @endif
 
-    @if ($seo->meta_description)
+    @if ($metaDescription)
         <meta name="description" content="{{ $seo->meta_description }}">
     @endif
 
@@ -39,7 +46,33 @@
         @endforeach
     @endif
 
-    @if ($seo->getFirstMediaUrl('og'))
-        <meta property="og:image" content="{{ $seo->getFirstMediaUrl('og') }}">
+    @if ($metaTitle)
+        <meta property="og:title" content="{{ $metaTitle }}">
+    @endif
+
+    @if ($metaDescription)
+        <meta property="og:description" content="{{ $metaDescription }}">
+    @endif
+
+    <meta property="og:type" content="website">
+
+    @if ($metaUrl)
+        <meta property="og:url" content="{{ $metaUrl }}">
+    @endif
+
+    @if ($ogImage)
+        <meta property="og:image" content="{{ $ogImage }}">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="twitter:image" content="{{ $ogImage }}">
+    @else
+        <meta name="twitter:card" content="summary">
+    @endif
+
+    @if ($metaTitle)
+        <meta name="twitter:title" content="{{ $metaTitle }}">
+    @endif
+
+    @if ($metaDescription)
+        <meta name="twitter:description" content="{{ $metaDescription }}">
     @endif
 @endif

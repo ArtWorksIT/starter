@@ -35,6 +35,32 @@ php artisan starter:typography:build
 
 This command generates typography tokens from a CSV file. Use the `--csv` option to provide a custom path or `--scale` to adjust the 3xl scaling behavior.
 
+## OG Images
+
+```bash
+php artisan starter:og-generate
+```
+
+This command generates OG images in batch mode from a CSV file. If the CSV does not exist, it will be created from the Starter manifest.
+
+### CSV format
+
+```
+slug,header,subtext,input,output
+home,Home,,public/assets/og/default.png,public/og
+```
+
+- `slug` becomes the output filename: `{output}/{slug}.png`
+- `input` is the source image; if missing, `public/assets/og/default.png` is used (auto-copied from the package default if needed)
+- `output` is a folder path
+
+### Options
+
+- `--csv` path to the CSV (default `resources/og.csv`)
+- `--force` overwrite existing images
+- `--strict` fail on invalid rows or missing fonts
+- `--heading-*` and `--subtext-*` override font settings (size, color, position, alignment)
+
 ## Configuration
 
 Publish the config file to customize package settings.
