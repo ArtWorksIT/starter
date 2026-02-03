@@ -986,6 +986,11 @@ class InstallCommand extends Command
             [],
         );
 
+        $jobFactory = $this->renderStub(
+            $this->stubPath('careers/factories/JobListingFactory.stub'),
+            [],
+        );
+
         $careersIndex = $this->renderStub(
             $this->stubPath('careers/views/index.stub'),
             [],
@@ -1003,6 +1008,10 @@ class InstallCommand extends Command
             ],
             'app/Models/JobListing.php' => [
                 'contents' => $jobModel,
+                'allow_marker' => true,
+            ],
+            'database/factories/JobListingFactory.php' => [
+                'contents' => $jobFactory,
                 'allow_marker' => true,
             ],
             'app/Filament/Resources/JobListingResource.php' => [
