@@ -7,3 +7,4 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/careers', [JobController::class, 'index'])->name('careers.index');
 Route::get('/careers/{slug}', [JobController::class, 'show'])->name('careers.show');
+Route::get('/career-preview/{slug}', [JobController::class, 'preview'])->name('careers.preview')->middleware('auth');

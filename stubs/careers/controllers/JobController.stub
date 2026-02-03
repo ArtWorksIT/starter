@@ -5,6 +5,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\JobListing;
+use Filament\Facades\Filament;
 use Illuminate\View\View;
 
 class JobController extends Controller
@@ -25,6 +26,17 @@ class JobController extends Controller
         $job = JobListing::query()
             ->where('slug', $slug)
             ->where('enabled', true)
+            ->firstOrFail();
+
+        return view('careers.show', compact('job'));
+    }
+
+    public function preview(string $slug): View
+    {
+        abort_unless(auth()->user()?->canAccessPanel(Filament::getPanel('admin')), 403);
+
+        $job = JobListing::query()
+            ->where('slug', $slug)
             ->firstOrFail();
 
         return view('careers.show', compact('job'));

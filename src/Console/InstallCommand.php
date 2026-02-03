@@ -500,6 +500,9 @@ class InstallCommand extends Command
         $blogFiles = $installBlog ? $this->blogFilesPayload() : [];
         $careersFiles = $installCareers ? $this->careersFilesPayload($careersMode) : [];
 
+        $needsFilament = $installSeo || $installBlog || $installCareers;
+        $userModelFiles = $needsFilament ? $this->userModelPayload() : [];
+
         $payload = [
             "routes/starter.php" => [
                 "contents" => $routesContents,
@@ -528,7 +531,7 @@ class InstallCommand extends Command
             ],
         ];
 
-        $extras = array_merge($seoFiles, $blogFiles, $careersFiles);
+        $extras = array_merge($seoFiles, $blogFiles, $careersFiles, $userModelFiles);
 
         return array_merge($payload, $extras, $pageFiles);
     }
@@ -1132,6 +1135,24 @@ class InstallCommand extends Command
             'resources/views/livewire/careers/apply-job.blade.php' => [
                 'contents' => $applyComponentView,
                 'allow_marker' => true,
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, array{contents: string, always_write?: bool}>
+     */
+    private function userModelPayload(): array
+    {
+        $userModel = $this->renderStub(
+            $this->stubPath('models/User.stub'),
+            [],
+        );
+
+        return [
+            'app/Models/User.php' => [
+                'contents' => $userModel,
+                'always_write' => true,
             ],
         ];
     }
