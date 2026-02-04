@@ -46,8 +46,7 @@ class SiteSeoResource extends Resource
                 Textarea::make('meta_description')
                     ->rows(3)
                     ->columnSpanFull(),
-                TagsInput::make('meta_keywords')
-                    ->separator(','),
+                TagsInput::make('meta_keywords'),
                 Repeater::make('meta_structure')
                     ->simple(
                         Textarea::make('schema')

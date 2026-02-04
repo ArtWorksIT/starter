@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3 - 2026-02-04
+- set OG media collection to the public disk in the SEO model stub
+- remove meta_keywords separator so Filament stores arrays
+
 ## 0.1.2 - 2026-02-01
 - rename OG generator command to `starter:og-generate`
 - add OG generator defaults in config and require `intervention/image`

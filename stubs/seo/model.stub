@@ -38,6 +38,6 @@ class SiteSeo extends Model implements HasMedia
 
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection('og')->singleFile();
+        $this->addMediaCollection('og')->singleFile()->useDisk('public');
     }
 }
