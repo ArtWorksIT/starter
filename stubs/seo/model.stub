@@ -5,6 +5,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
@@ -36,8 +37,27 @@ class SiteSeo extends Model implements HasMedia
         ];
     }
 
+    public function seoable(): MorphTo
+    {
+        return $this->morphTo();
+    }
+
     public function registerMediaCollections(): void
     {
         $this->addMediaCollection('og')->singleFile()->useDisk('public');
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (SiteSeo $seo): void {
+            $seo->url = static::normalizeUrl((string) $seo->url);
+        });
+    }
+
+    private static function normalizeUrl(string $url): string
+    {
+        $normalized = '/'.trim(strtolower($url), '/');
+
+        return $normalized === '/' ? $normalized : rtrim($normalized, '/');
     }
 }

@@ -4,15 +4,14 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasSeoMorph;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
 
-class JobListing extends Model implements HasMedia
+class JobListing extends Model
 {
-    use InteractsWithMedia;
+    use HasSeoMorph;
     use SoftDeletes;
 
     /**
@@ -28,25 +27,19 @@ class JobListing extends Model implements HasMedia
         'description',
         'external_link',
         'sort_order',
-        'meta_title',
-        'meta_description',
-        'meta_keywords',
-        'meta_structure',
     ];
-
-    /**
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'meta_keywords' => 'array',
-            'meta_structure' => 'array',
-        ];
-    }
 
     public function submissions(): HasMany
     {
         return $this->hasMany(JobSubmission::class);
+    }
+
+    protected function seoUrl(): ?string
+    {
+        if ($this->slug === '') {
+            return null;
+        }
+
+        return '/careers/'.$this->slug;
     }
 }

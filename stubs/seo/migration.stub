@@ -12,11 +12,13 @@ return new class extends Migration
     {
         Schema::create('site_seos', function (Blueprint $table) {
             $table->id();
+            $table->nullableMorphs('seoable');
             $table->string('url')->unique();
             $table->string('meta_title')->nullable();
             $table->json('meta_keywords')->nullable();
             $table->text('meta_description')->nullable();
             $table->json('meta_structure')->nullable();
+            $table->unique(['seoable_type', 'seoable_id']);
             $table->softDeletes();
             $table->timestamps();
         });

@@ -35,7 +35,7 @@ class BlogAuthorResource extends Resource
             ->schema([
                 TextInput::make('name')
                     ->required()
-                    ->live()
+                    ->live(debounce: 500)
                     ->afterStateUpdated(fn ($state, callable $set) => $set('slug', \Illuminate\Support\Str::slug((string) $state)))
                     ->columnSpanFull(),
                 TextInput::make('slug')

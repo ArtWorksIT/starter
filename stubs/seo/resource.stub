@@ -6,18 +6,18 @@ namespace App\Filament\Resources;
 
 use App\Filament\Resources\SiteSeoResource\Pages;
 use App\Models\SiteSeo;
-use Filament\Forms\Components\Repeater;
-use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\TagsInput;
-use Filament\Schemas\Schema;
-use Filament\Resources\Resource;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
+use Filament\Forms\Components\TagsInput;
+use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
+use Filament\Resources\Resource;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
@@ -40,6 +40,7 @@ class SiteSeoResource extends Resource
                 TextInput::make('url')
                     ->required()
                     ->unique(ignoreRecord: true)
+                    ->helperText('Create entries for static pages only. Model URLs are managed from their resource.')
                     ->disabledOn('edit')
                     ->columnSpanFull(),
                 TextInput::make('meta_title'),
@@ -72,6 +73,9 @@ class SiteSeoResource extends Resource
                 TextColumn::make('url')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('source')
+                    ->state(fn (SiteSeo $record): string => static::sourceLabel($record))
+                    ->url(fn (SiteSeo $record): ?string => static::sourceEditUrl($record)),
                 TextColumn::make('meta_title')
                     ->searchable(),
                 TextColumn::make('updated_at')
@@ -109,5 +113,34 @@ class SiteSeoResource extends Resource
         return parent::getEloquentQuery()->withoutGlobalScopes([
             \Illuminate\Database\Eloquent\SoftDeletingScope::class,
         ]);
+    }
+
+    private static function sourceLabel(SiteSeo $record): string
+    {
+        if (! is_string($record->seoable_type) || $record->seoable_type === '') {
+            return 'Static';
+        }
+
+        return class_basename($record->seoable_type);
+    }
+
+    private static function sourceEditUrl(SiteSeo $record): ?string
+    {
+        if (! is_string($record->seoable_type) || ! is_numeric($record->seoable_id)) {
+            return null;
+        }
+
+        $resource = match ($record->seoable_type) {
+            \App\Models\BlogPost::class => \App\Filament\Resources\BlogPostResource::class,
+            \App\Models\JobListing::class => \App\Filament\Resources\JobListingResource::class,
+            default => null,
+        };
+
+        if (! is_string($resource) || ! class_exists($resource)) {
+            return null;
+        }
+
+        /** @var class-string<\Filament\Resources\Resource> $resource */
+        return $resource::getUrl('edit', ['record' => (int) $record->seoable_id]);
     }
 }

@@ -4,20 +4,20 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Resources\Concerns\HasSeoFormFields;
 use App\Filament\Resources\BlogPostResource\Pages;
 use App\Models\BlogAuthor;
 use App\Models\BlogPost;
+use App\Models\SiteSeo;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\SpatieMediaLibraryFileUpload;
-use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -26,7 +26,6 @@ use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Resources\Resource;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\TrashedFilter;
@@ -36,6 +35,8 @@ use Illuminate\Support\Str;
 
 class BlogPostResource extends Resource
 {
+    use HasSeoFormFields;
+
     protected static ?string $model = BlogPost::class;
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
@@ -54,7 +55,7 @@ class BlogPostResource extends Resource
                             ->schema([
                                 TextInput::make('title')
                                     ->required()
-                                    ->live()
+                                    ->live(debounce: 500)
                                     ->afterStateUpdated(fn ($state, callable $set) => $set('slug', Str::slug((string) $state)))
                                     ->columnSpanFull(),
                                 TextInput::make('slug')
@@ -70,6 +71,7 @@ class BlogPostResource extends Resource
                                     ->rows(3)
                                     ->columnSpanFull(),
                                 RichEditor::make('content')
+                                    ->extraInputAttributes(['style' => 'min-height: 20rem;'])
                                     ->columnSpanFull(),
                             ]),
                         Tab::make('Media')
@@ -77,13 +79,6 @@ class BlogPostResource extends Resource
                                 SpatieMediaLibraryFileUpload::make('cover')
                                     ->collection('cover')
                                     ->image()
-                                    ->columnSpanFull(),
-                                SpatieMediaLibraryFileUpload::make('og')
-                                    ->collection('og')
-                                    ->helperText('Recommended size: 1200x630 (1200:630).')
-                                    ->image()
-                                    ->imageAspectRatio('1200:630')
-                                    ->automaticallyOpenImageEditorForAspectRatio()
                                     ->columnSpanFull(),
                             ]),
                         Tab::make('Publishing')
@@ -94,24 +89,7 @@ class BlogPostResource extends Resource
                                     ->label('Published at'),
                             ]),
                         Tab::make('SEO')
-                            ->schema([
-                                TextInput::make('meta_title')
-                                    ->helperText('Defaults to title.'),
-                                Textarea::make('meta_description')
-                                    ->rows(3)
-                                    ->helperText('Defaults to excerpt.')
-                                    ->columnSpanFull(),
-                                TagsInput::make('meta_keywords')
-                                    ->separator(','),
-                                Repeater::make('meta_structure')
-                                    ->simple(
-                                        Textarea::make('schema')
-                                            ->rows(6)
-                                            ->helperText('One JSON-LD schema per item.')
-                                            ->columnSpanFull(),
-                                    )
-                                    ->columnSpanFull(),
-                            ]),
+                            ->schema(static::seoTabSchema()),
                     ])
                     ->columnSpanFull(),
             ]);
@@ -140,6 +118,25 @@ class BlogPostResource extends Resource
             ])
             ->recordActions([
                 EditAction::make(),
+                Action::make('seo')
+                    ->label('Edit SEO')
+                    ->url(function (BlogPost $record): ?string {
+                        if (! class_exists(SiteSeo::class) || ! class_exists(SiteSeoResource::class)) {
+                            return null;
+                        }
+
+                        $seoId = SiteSeo::query()
+                            ->where('seoable_type', BlogPost::class)
+                            ->where('seoable_id', $record->getKey())
+                            ->value('id');
+
+                        if (! is_numeric($seoId)) {
+                            return null;
+                        }
+
+                        return SiteSeoResource::getUrl('edit', ['record' => (int) $seoId]);
+                    })
+                    ->visible(fn (): bool => class_exists(SiteSeo::class) && class_exists(SiteSeoResource::class)),
                 Action::make('preview')
                     ->label('Preview')
                     ->url(fn (BlogPost $record): string => route('blog.show', $record->slug))
@@ -174,5 +171,10 @@ class BlogPostResource extends Resource
         return parent::getEloquentQuery()->withoutGlobalScopes([
             \Illuminate\Database\Eloquent\SoftDeletingScope::class,
         ]);
+    }
+
+    protected static function seoDescriptionHelperText(): ?string
+    {
+        return 'Defaults to excerpt when empty.';
     }
 }

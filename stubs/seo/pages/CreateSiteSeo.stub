@@ -10,4 +10,15 @@ use Filament\Resources\Pages\CreateRecord;
 class CreateSiteSeo extends CreateRecord
 {
     protected static string $resource = SiteSeoResource::class;
+
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        unset($data['seoable_type'], $data['seoable_id']);
+
+        return $data;
+    }
 }

@@ -4,10 +4,29 @@
 
 namespace App\Filament\Resources\JobListingResource\Pages;
 
+use App\Filament\Resources\Concerns\HandlesSeoFormData;
 use App\Filament\Resources\JobListingResource;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateJobListing extends CreateRecord
 {
+    use HandlesSeoFormData;
+
     protected static string $resource = JobListingResource::class;
+
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $this->seoData = $this->extractSeoData($data);
+
+        return $this->stripSeoFields($data);
+    }
+
+    protected function afterCreate(): void
+    {
+        $this->syncSeoForUrl($this->seoUrlFromSlug('/careers'));
+    }
 }

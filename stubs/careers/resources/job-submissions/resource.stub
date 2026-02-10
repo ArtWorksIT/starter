@@ -19,16 +19,31 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\HtmlString;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class JobSubmissionResource extends Resource
 {
     protected static ?string $model = JobSubmission::class;
 
-    private static function cvLink(JobSubmission $record): ?string
+    private static function cvMedia(JobSubmission $record): ?Media
     {
-        $url = $record->getFirstMediaUrl("cv");
-        return $url ?: null;
+        return $record->getFirstMedia('cv');
+    }
+
+    private static function downloadCvAction(): Action
+    {
+        return Action::make('downloadCv')
+            ->label('Download CV')
+            ->action(function (JobSubmission $record) {
+                $media = static::cvMedia($record);
+
+                if (! $media instanceof Media) {
+                    return null;
+                }
+
+                return response()->download($media->getPath(), $media->file_name);
+            })
+            ->visible(fn (JobSubmission $record): bool => static::cvMedia($record) instanceof Media);
     }
 
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-inbox';
@@ -55,6 +70,7 @@ class JobSubmissionResource extends Resource
             ])
             ->recordActions([
                 ViewAction::make(),
+                static::downloadCvAction(),
                 Action::make('markReviewed')
                     ->label('Mark reviewed')
                     ->action(function (JobSubmission $record): void {
@@ -117,16 +133,8 @@ class JobSubmissionResource extends Resource
                 ->columnSpanFull(),
             TextEntry::make("cv")
                 ->label("CV")
-                ->state("Download CV")
-                ->url(
-                    fn(JobSubmission $record): ?string => self::cvLink($record),
-                )
-                ->hidden(
-                    fn(JobSubmission $record): bool => blank(
-                        self::cvLink($record),
-                    ),
-                )
-                ->openUrlInNewTab(),
+                ->state(fn (JobSubmission $record): string => static::cvMedia($record)?->file_name ?? 'No file uploaded')
+                ->hidden(fn (JobSubmission $record): bool => ! (static::cvMedia($record) instanceof Media)),
             TextEntry::make('status'),
             TextEntry::make('notes')
                 ->columnSpanFull(),

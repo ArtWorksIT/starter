@@ -7,6 +7,7 @@ namespace App\Filament\Resources\JobSubmissionResource\Pages;
 use App\Filament\Resources\JobSubmissionResource;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\ViewRecord;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class ViewJobSubmission extends ViewRecord
 {
@@ -15,6 +16,18 @@ class ViewJobSubmission extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('downloadCv')
+                ->label('Download CV')
+                ->action(function () {
+                    $media = $this->record->getFirstMedia('cv');
+
+                    if (! $media instanceof Media) {
+                        return null;
+                    }
+
+                    return response()->download($media->getPath(), $media->file_name);
+                })
+                ->visible(fn (): bool => $this->record->getFirstMedia('cv') instanceof Media),
             Action::make('markReviewed')
                 ->label('Mark reviewed')
                 ->action(function (): void {

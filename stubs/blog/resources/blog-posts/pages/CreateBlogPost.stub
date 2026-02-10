@@ -4,10 +4,29 @@
 
 namespace App\Filament\Resources\BlogPostResource\Pages;
 
+use App\Filament\Resources\Concerns\HandlesSeoFormData;
 use App\Filament\Resources\BlogPostResource;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateBlogPost extends CreateRecord
 {
+    use HandlesSeoFormData;
+
     protected static string $resource = BlogPostResource::class;
+
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        $this->seoData = $this->extractSeoData($data);
+
+        return $this->stripSeoFields($data);
+    }
+
+    protected function afterCreate(): void
+    {
+        $this->syncSeoForUrl($this->seoUrlFromSlug('/blog'));
+    }
 }

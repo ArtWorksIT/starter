@@ -20,10 +20,6 @@ return new class extends Migration
             $table->string('job_type')->nullable();
             $table->longText('description')->nullable();
             $table->string('external_link')->nullable();
-            $table->string('meta_title')->nullable();
-            $table->text('meta_description')->nullable();
-            $table->json('meta_keywords')->nullable();
-            $table->json('meta_structure')->nullable();
             $table->unsignedInteger('sort_order')->default(0);
             $table->softDeletes();
             $table->timestamps();

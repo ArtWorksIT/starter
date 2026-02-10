@@ -4,6 +4,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasSeoMorph;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -13,6 +14,7 @@ use Spatie\Tags\HasTags;
 
 class BlogPost extends Model implements HasMedia
 {
+    use HasSeoMorph;
     use HasTags;
     use InteractsWithMedia;
     use SoftDeletes;
@@ -29,10 +31,6 @@ class BlogPost extends Model implements HasMedia
         'content',
         'published_at',
         'is_published',
-        'meta_title',
-        'meta_description',
-        'meta_keywords',
-        'meta_structure',
     ];
 
     /**
@@ -41,8 +39,6 @@ class BlogPost extends Model implements HasMedia
     protected function casts(): array
     {
         return [
-            'meta_keywords' => 'array',
-            'meta_structure' => 'array',
             'published_at' => 'datetime',
             'is_published' => 'boolean',
         ];
@@ -50,8 +46,7 @@ class BlogPost extends Model implements HasMedia
 
     public function registerMediaCollections(): void
     {
-        $this->addMediaCollection('cover')->singleFile();
-        $this->addMediaCollection('og')->singleFile();
+        $this->addMediaCollection('cover')->singleFile()->useDisk('public');
     }
 
     public function author(): BelongsTo
@@ -62,5 +57,14 @@ class BlogPost extends Model implements HasMedia
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    protected function seoUrl(): ?string
+    {
+        if ($this->slug === '') {
+            return null;
+        }
+
+        return '/blog/'.$this->slug;
     }
 }

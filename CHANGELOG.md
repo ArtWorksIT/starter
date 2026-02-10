@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.4 - 2026-02-10
+- extract installer payload generation into `src/Console/Install/PayloadBuilder.php`
+- add reusable SEO model concern `HasSeoMorph` for model-level URL sync logic
+- add reusable Filament SEO concerns `HasSeoFormFields` and `HandlesSeoFormData`
+- move SEO component business logic into class component `App\View\Components\Seo`
+- standardize SEO injection to `<x-seo />` as the single source of truth
+- use `imageEditorAspectRatioOptions(['1200:630'])` for SEO OG upload field
+
 ## 0.1.3 - 2026-02-04
 - set OG media collection to the public disk in the SEO model stub
 - remove meta_keywords separator so Filament stores arrays

@@ -20,10 +20,6 @@ return new class extends Migration
             $table->longText('content')->nullable();
             $table->timestamp('published_at')->nullable();
             $table->boolean('is_published')->default(false);
-            $table->string('meta_title')->nullable();
-            $table->text('meta_description')->nullable();
-            $table->json('meta_keywords')->nullable();
-            $table->json('meta_structure')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });
