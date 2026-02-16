@@ -75,6 +75,37 @@ home,Home,,public/assets/og/default.png,public/og
 - `--strict` fail on invalid rows or missing fonts
 - `--heading-*` and `--subtext-*` override font settings (size, color, position, alignment)
 
+## Sitemap
+
+```bash
+php artisan starter:sitemap:generate
+```
+
+This command generates an application command stub at `app/Console/Commands/GenerateSitemapCommand.php`.
+
+Then run:
+
+```bash
+php artisan sitemap:generate
+```
+
+The generated command creates `sitemap.xml` by browsing application routes. It asks for your domain and defaults to `APP_URL`.
+
+### Route handling
+
+- Home route `/` uses priority `1.0`
+- Static routes use priority `0.8`
+- Slug routes use priority `0.6`
+- Other dynamic placeholder routes use priority `0.4`
+- Filament routes are excluded
+
+### Options
+
+- `starter:sitemap:generate --force` overwrite existing generated command stub
+- `sitemap:generate --domain` domain used in generated URLs (if omitted, command prompts with default from `APP_URL`)
+- `sitemap:generate --output` output file path (default `public/sitemap.xml`)
+- `sitemap:generate --force` overwrite existing sitemap file
+
 ## Configuration
 
 Publish the config file to customize package settings.

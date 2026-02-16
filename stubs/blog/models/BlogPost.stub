@@ -18,7 +18,6 @@ class BlogPost extends Model implements HasMedia
     use HasTags;
     use InteractsWithMedia;
     use SoftDeletes;
-
     /**
      * @var list<string>
      */

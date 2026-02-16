@@ -1,0 +1,407 @@
+<?php
+
+namespace App\Console\Commands;
+
+use Illuminate\Console\Command;
+use Illuminate\Filesystem\Filesystem;
+use Illuminate\Routing\Route;
+use Illuminate\Support\Str;
+
+class GenerateSitemapCommand extends Command
+{
+    protected $signature = 'sitemap:generate
+        {--domain= : Domain for sitemap URLs}
+        {--output=public/sitemap.xml : Output path for sitemap.xml}
+        {--force : Overwrite existing sitemap.xml}';
+
+    protected $description = 'Generate sitemap.xml from application routes.';
+
+    public function handle(Filesystem $filesystem): int
+    {
+        $domain = $this->resolveDomain();
+
+        if ($domain === null) {
+            return self::FAILURE;
+        }
+
+        $output = (string) $this->option('output');
+        $outputPath = $this->resolvePath($output);
+
+        if ($filesystem->exists($outputPath) && ! $this->option('force')) {
+            $this->error("Sitemap already exists at {$output}. Use --force to overwrite.");
+
+            return self::FAILURE;
+        }
+
+        $directory = dirname($outputPath);
+
+        if (! $filesystem->isDirectory($directory)) {
+            $filesystem->makeDirectory($directory, 0755, true);
+        }
+
+        $entries = $this->buildSitemapEntries($domain);
+        $xml = $this->buildXml($entries);
+
+        $filesystem->put($outputPath, $xml);
+
+        $this->info("Sitemap written to {$output}.");
+        $this->line('Entries generated: ' . count($entries));
+
+        return self::SUCCESS;
+    }
+
+    private function resolveDomain(): ?string
+    {
+        $defaultDomain = (string) config('app.url', 'http://localhost');
+        $optionDomain = $this->option('domain');
+
+        $domainInput = is_string($optionDomain) && trim($optionDomain) !== ''
+            ? trim($optionDomain)
+            : trim((string) $this->ask('Domain for sitemap URLs', $defaultDomain));
+
+        if ($domainInput === '') {
+            $this->error('A domain is required to generate sitemap URLs.');
+
+            return null;
+        }
+
+        if (! Str::startsWith($domainInput, ['http://', 'https://'])) {
+            $domainInput = 'https://' . $domainInput;
+        }
+
+        return rtrim($domainInput, '/');
+    }
+
+    private function resolvePath(string $path): string
+    {
+        if ($this->isAbsolutePath($path)) {
+            return $path;
+        }
+
+        return base_path($path);
+    }
+
+    private function isAbsolutePath(string $path): bool
+    {
+        if (Str::startsWith($path, ['/', '\\'])) {
+            return true;
+        }
+
+        return (bool) preg_match('/^[A-Za-z]:\\\\/', $path);
+    }
+
+    /**
+     * @return array<int, array{loc: string, priority: float, changefreq: string, lastmod: string}>
+     */
+    private function buildSitemapEntries(string $domain): array
+    {
+        $timestamp = now()->toAtomString();
+        $entries = [];
+        $seen = [];
+
+        /** @var \Illuminate\Routing\RouteCollectionInterface $routes */
+        $routes = app('router')->getRoutes();
+
+        foreach ($routes as $route) {
+            if (! $route instanceof Route) {
+                continue;
+            }
+
+            if (! $this->shouldIncludeRoute($route)) {
+                continue;
+            }
+
+            $uri = '/' . ltrim($route->uri(), '/');
+
+            if ($uri === '/' || $uri === '') {
+                $this->pushEntry($entries, $seen, [
+                    'loc' => $domain . '/',
+                    'priority' => 1.0,
+                    'changefreq' => 'weekly',
+                    'lastmod' => $timestamp,
+                ]);
+
+                continue;
+            }
+
+            if ($this->hasDynamicSegments($uri)) {
+                if ($this->isSlugRoute($uri)) {
+                    foreach ($this->slugEntriesForRoute($uri, $domain, $timestamp) as $entry) {
+                        $this->pushEntry($entries, $seen, $entry);
+                    }
+
+                    continue;
+                }
+
+                $this->pushEntry($entries, $seen, [
+                    'loc' => $domain . $uri,
+                    'priority' => 0.4,
+                    'changefreq' => 'weekly',
+                    'lastmod' => $timestamp,
+                ]);
+
+                continue;
+            }
+
+            $this->pushEntry($entries, $seen, [
+                'loc' => $domain . $uri,
+                'priority' => 0.8,
+                'changefreq' => 'weekly',
+                'lastmod' => $timestamp,
+            ]);
+        }
+
+        usort($entries, fn (array $left, array $right): int => $left['loc'] <=> $right['loc']);
+
+        return $entries;
+    }
+
+    /**
+     * @param array<int, array{loc: string, priority: float, changefreq: string, lastmod: string}> $entries
+     * @param array<string, bool> $seen
+     * @param array{loc: string, priority: float, changefreq: string, lastmod: string} $entry
+     */
+    private function pushEntry(array &$entries, array &$seen, array $entry): void
+    {
+        if (isset($seen[$entry['loc']])) {
+            return;
+        }
+
+        $entries[] = $entry;
+        $seen[$entry['loc']] = true;
+    }
+
+    private function shouldIncludeRoute(Route $route): bool
+    {
+        $methods = $route->methods();
+
+        if (! in_array('GET', $methods, true) && ! in_array('HEAD', $methods, true)) {
+            return false;
+        }
+
+        $uri = ltrim($route->uri(), '/');
+
+        if ($this->isApiRoute($route, $uri)) {
+            return false;
+        }
+
+        if ($this->isFrameworkRoute($uri)) {
+            return false;
+        }
+
+        if ($this->isFilamentRoute($route, $uri)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private function isApiRoute(Route $route, string $uri): bool
+    {
+        if ($uri === 'api' || Str::startsWith($uri, 'api/')) {
+            return true;
+        }
+
+        foreach ($route->gatherMiddleware() as $middleware) {
+            if (Str::contains($middleware, 'api')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function isFrameworkRoute(string $uri): bool
+    {
+        return Str::startsWith($uri, [
+            '_debugbar',
+            '_ignition',
+            'horizon',
+            'livewire',
+            'sanctum',
+            'storage',
+            'telescope',
+            'up',
+        ]);
+    }
+
+    private function isFilamentRoute(Route $route, string $uri): bool
+    {
+        $name = $route->getName();
+
+        if (is_string($name) && Str::startsWith($name, 'filament.')) {
+            return true;
+        }
+
+        $action = $route->getActionName();
+
+        if (is_string($action) && Str::contains($action, 'Filament\\')) {
+            return true;
+        }
+
+        foreach ($this->filamentPaths() as $path) {
+            $normalized = trim($path, '/');
+
+            if ($normalized === '') {
+                continue;
+            }
+
+            if ($uri === $normalized || Str::startsWith($uri, $normalized . '/')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function filamentPaths(): array
+    {
+        $paths = [];
+
+        $singlePath = config('filament.path');
+
+        if (is_string($singlePath) && trim($singlePath) !== '') {
+            $paths[] = trim($singlePath);
+        }
+
+        $panels = config('filament.panels');
+
+        if (is_array($panels)) {
+            foreach ($panels as $panel) {
+                if (! is_array($panel)) {
+                    continue;
+                }
+
+                $path = $panel['path'] ?? null;
+
+                if (is_string($path) && trim($path) !== '') {
+                    $paths[] = trim($path);
+                }
+            }
+        }
+
+        return array_values(array_unique($paths));
+    }
+
+    private function hasDynamicSegments(string $uri): bool
+    {
+        return Str::contains($uri, '{');
+    }
+
+    private function isSlugRoute(string $uri): bool
+    {
+        return Str::contains($uri, '{slug}');
+    }
+
+    /**
+     * Edit this map to control which slug routes are expanded from models.
+     *
+     * @return array<string, array{model: class-string, slug_column: string, constraints?: array<int, array{column: string, value: mixed}>}>
+     */
+    private function slugRouteModelMap(): array
+    {
+        return [
+            '/blog/{slug}' => [
+                'model' => \App\Models\BlogPost::class,
+                'slug_column' => 'slug',
+                'constraints' => [],
+            ],
+            '/careers/{slug}' => [
+                'model' => \App\Models\JobListing::class,
+                'slug_column' => 'slug',
+                'constraints' => [],
+            ],
+        ];
+    }
+
+    /**
+     * @return array<int, array{loc: string, priority: float, changefreq: string, lastmod: string}>
+     */
+    private function slugEntriesForRoute(string $uri, string $domain, string $timestamp): array
+    {
+        $map = $this->slugRouteModelMap();
+
+        if (! array_key_exists($uri, $map)) {
+            $this->warn("No model mapping found for slug route {$uri}. Keeping placeholder URL.");
+
+            return [[
+                'loc' => $domain . $uri,
+                'priority' => 0.6,
+                'changefreq' => 'weekly',
+                'lastmod' => $timestamp,
+            ]];
+        }
+
+        $definition = $map[$uri];
+        $modelClass = $definition['model'];
+        $slugColumn = $definition['slug_column'];
+
+        if (! class_exists($modelClass)) {
+            $this->warn("Model {$modelClass} not found for route {$uri}. Skipping route.");
+
+            return [];
+        }
+
+        try {
+            $query = $modelClass::query();
+
+            foreach (($definition['constraints'] ?? []) as $constraint) {
+                $query->where($constraint['column'], $constraint['value']);
+            }
+
+            $slugs = $query
+                ->whereNotNull($slugColumn)
+                ->pluck($slugColumn)
+                ->filter(fn ($slug): bool => is_string($slug) && trim($slug) !== '')
+                ->map(fn (string $slug): string => trim($slug))
+                ->unique()
+                ->values()
+                ->all();
+        } catch (\Throwable $exception) {
+            $this->warn("Failed loading slugs for route {$uri}: {$exception->getMessage()}. Skipping route.");
+
+            return [];
+        }
+
+        if ($slugs === []) {
+            return [];
+        }
+
+        $prefix = strstr($uri, '{slug}', true);
+        $prefix = is_string($prefix) ? rtrim($prefix, '/') : rtrim($uri, '/');
+
+        return array_map(fn (string $slug): array => [
+            'loc' => $domain . $prefix . '/' . rawurlencode($slug),
+            'priority' => 0.6,
+            'changefreq' => 'weekly',
+            'lastmod' => $timestamp,
+        ], $slugs);
+    }
+
+    /**
+     * @param array<int, array{loc: string, priority: float, changefreq: string, lastmod: string}> $entries
+     */
+    private function buildXml(array $entries): string
+    {
+        $lines = [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+        ];
+
+        foreach ($entries as $entry) {
+            $lines[] = '    <url>';
+            $lines[] = '        <loc>' . htmlspecialchars($entry['loc'], ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</loc>';
+            $lines[] = '        <lastmod>' . htmlspecialchars($entry['lastmod'], ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</lastmod>';
+            $lines[] = '        <changefreq>' . htmlspecialchars($entry['changefreq'], ENT_XML1 | ENT_QUOTES, 'UTF-8') . '</changefreq>';
+            $lines[] = '        <priority>' . number_format($entry['priority'], 1, '.', '') . '</priority>';
+            $lines[] = '    </url>';
+        }
+
+        $lines[] = '</urlset>';
+
+        return implode("\n", $lines) . "\n";
+    }
+}
