@@ -118,6 +118,7 @@ class BlogPostResource extends Resource
             ])
             ->recordActions([
                 EditAction::make(),
+                \Artworksit\Starter\Filament\Actions\TogglePublishAction::make(),
                 Action::make('seo')
                     ->label('Edit SEO')
                     ->url(function (BlogPost $record): ?string {

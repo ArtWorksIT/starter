@@ -29,8 +29,7 @@ class ApplyJob extends Component
     {
         $this->job = JobListing::query()
             ->where('slug', $slug)
-            ->where('enabled', true)
-            ->firstOrFail();
+            ->publishedOrFail();
     }
 
     public function submit(): void

@@ -23,7 +23,6 @@ class JobListingFactory extends Factory
         $title = fake()->jobTitle();
 
         return [
-            'enabled' => fake()->boolean(80),
             'title' => $title,
             'slug' => Str::slug($title . '-' . fake()->unique()->numerify('###')),
             'experience' => fake()->randomElement(['Entry Level', 'Mid Level', 'Senior', 'Lead', 'Manager']),
@@ -54,17 +53,4 @@ class JobListingFactory extends Factory
         ]);
     }
 
-    public function enabled(): static
-    {
-        return $this->state(fn (array $attributes): array => [
-            'enabled' => true,
-        ]);
-    }
-
-    public function disabled(): static
-    {
-        return $this->state(fn (array $attributes): array => [
-            'enabled' => false,
-        ]);
-    }
 }

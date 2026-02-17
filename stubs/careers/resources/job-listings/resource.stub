@@ -17,15 +17,12 @@ use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables\Columns\TextColumn;
-use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\SelectFilter;
-use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -51,9 +48,6 @@ class JobListingResource extends Resource
                     ->tabs([
                         Tab::make('Details')
                             ->schema([
-                                Toggle::make('enabled')
-                                    ->label('Enabled')
-                                    ->default(true),
                                 TextInput::make('title')
                                     ->required()
                                     ->live(debounce: 500)
@@ -108,12 +102,11 @@ class JobListingResource extends Resource
                 TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable(),
-                ToggleColumn::make('enabled')
-                    ->label('Enabled'),
             ])
             ->reorderable('sort_order')
             ->recordActions([
                 EditAction::make(),
+                \Artworksit\Starter\Filament\Actions\TogglePublishAction::make(),
                 Action::make('seo')
                     ->label('Edit SEO')
                     ->url(function (JobListing $record): ?string {
@@ -139,8 +132,6 @@ class JobListingResource extends Resource
                     ->openUrlInNewTab(),
             ])
             ->filters([
-                TernaryFilter::make('enabled')
-                    ->label('Enabled'),
                 SelectFilter::make('job_type')
                     ->label('Job type')
                     ->options([
