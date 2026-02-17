@@ -161,8 +161,8 @@ class PayloadBuilder
 
         foreach ($pageEntries as $entry) {
             $links[] = sprintf(
-                '<a href="%s">%s</a>',
-                $entry['url'],
+                "<a href=\"{{ route('%s') }}\">%s</a>",
+                $entry['route_name'],
                 $this->headline(str_replace('.', ' ', $entry['key'])),
             );
         }

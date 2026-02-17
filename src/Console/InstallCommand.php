@@ -232,8 +232,7 @@ class InstallCommand extends Command
                 $segments = collect(explode(">", $page))
                     ->map(
                         fn(string $segment) => Str::of($segment)
-                            ->kebab()
-                            ->lower()
+                            ->slug()
                             ->value(),
                     )
                     ->filter();
@@ -913,9 +912,9 @@ class InstallCommand extends Command
     private function seoDependencies(): array
     {
         return [
-            "filament/filament" => "^4.0",
+            "filament/filament" => "^5.0",
             "spatie/laravel-medialibrary" => "^11.0",
-            "filament/spatie-laravel-media-library-plugin" => "^4.0",
+            "filament/spatie-laravel-media-library-plugin" => "^5.0",
         ];
     }
 
@@ -1170,7 +1169,7 @@ class InstallCommand extends Command
         $dependencies = [
             'spatie/laravel-tags' => '^4.0',
             'spatie/laravel-medialibrary' => '^11.0',
-            'filament/spatie-laravel-media-library-plugin' => '^4.0',
+            'filament/spatie-laravel-media-library-plugin' => '^5.0',
         ];
 
         return $this->ensureDependencies(
@@ -1189,7 +1188,7 @@ class InstallCommand extends Command
     {
         $dependencies = [
             'spatie/laravel-medialibrary' => '^11.0',
-            'filament/spatie-laravel-media-library-plugin' => '^4.0',
+            'filament/spatie-laravel-media-library-plugin' => '^5.0',
         ];
 
         return $this->ensureDependencies(
