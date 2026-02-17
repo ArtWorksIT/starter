@@ -158,20 +158,10 @@ $item = MyThing::query()->where('slug', $slug)->publishedOrFail();
 
 **4. Filament resource (optional)**
 
-Copy the stubs into your app once:
-
-```
-stubs/publishable/filament/actions/TogglePublishAction.stub
-    → app/Filament/Actions/TogglePublishAction.php
-
-stubs/publishable/filament/actions/concerns/ValidatesPublishable.stub
-    → app/Filament/Actions/Concerns/ValidatesPublishable.php
-```
-
-Then add the action to your Edit page:
+No copying needed — the action ships as a package class. Import it directly:
 
 ```php
-use App\Filament\Actions\TogglePublishAction;
+use Artworksit\Starter\Filament\Actions\TogglePublishAction;
 
 protected function getHeaderActions(): array
 {

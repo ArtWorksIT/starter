@@ -6,6 +6,8 @@ namespace App\Filament\Resources\BlogPostResource\Pages;
 
 use App\Filament\Resources\Concerns\HandlesSeoFormData;
 use App\Filament\Resources\BlogPostResource;
+use Artworksit\Starter\Filament\Actions\TogglePublishAction;
+use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
 class EditBlogPost extends EditRecord
@@ -13,6 +15,17 @@ class EditBlogPost extends EditRecord
     use HandlesSeoFormData;
 
     protected static string $resource = BlogPostResource::class;
+
+    /**
+     * @return array<\Filament\Actions\Action>
+     */
+    protected function getHeaderActions(): array
+    {
+        return [
+            TogglePublishAction::make(),
+            Actions\DeleteAction::make(),
+        ];
+    }
 
     /**
      * @param array<string, mixed> $data

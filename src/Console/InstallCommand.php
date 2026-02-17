@@ -96,6 +96,7 @@ class InstallCommand extends Command
         if ($installSeo || $installBlog || $installCareers) {
             $this->ensureFilamentPanel();
             $this->ensureFilamentTheme();
+            $this->ensureFilamentUserModel();
         }
 
         if ($installSeo || $installBlog || ($installCareers && $careersMode === 'internal')) {
@@ -208,6 +209,10 @@ class InstallCommand extends Command
 
         if ($installSeo && $installCareers) {
             $this->seedCareersIndexSeo();
+        }
+
+        if ($installCareers) {
+            $this->seedJobListings();
         }
 
         if ($installSeo) {
@@ -725,10 +730,18 @@ class InstallCommand extends Command
 
         $contents = $filesystem->get($path);
 
-        if (
-            Str::contains($contents, 'StarterUserSeeder::class')
-            && Str::contains($contents, 'StarterSeoSeeder::class')
-        ) {
+        $required = ['StarterUserSeeder::class', 'StarterSeoSeeder::class'];
+
+        if ($this->installCareers) {
+            $required[] = 'JobListingSeeder::class';
+        }
+
+        $missing = array_values(array_filter(
+            $required,
+            fn (string $s) => ! Str::contains($contents, $s),
+        ));
+
+        if (empty($missing)) {
             return;
         }
 
@@ -742,28 +755,17 @@ class InstallCommand extends Command
         $bodyIndent = $indent.'    ';
         $pattern = '/public function run\(\): void\s*\{(?P<body>.*?)\}/s';
 
-        $updated = preg_replace_callback($pattern, function (array $matches) use ($bodyIndent, $indent): string {
+        $updated = preg_replace_callback($pattern, function (array $matches) use ($bodyIndent, $indent, $missing): string {
             $body = $matches['body'];
-            $needsUserSeeder = ! Str::contains($body, 'StarterUserSeeder::class');
-            $needsSeoSeeder = ! Str::contains($body, 'StarterSeoSeeder::class');
+            $toAdd = array_values(array_filter($missing, fn (string $s) => ! Str::contains($body, $s)));
 
-            if (! $needsUserSeeder && ! $needsSeoSeeder) {
+            if (empty($toAdd)) {
                 return $matches[0];
-            }
-
-            $seeders = [];
-
-            if ($needsUserSeeder) {
-                $seeders[] = 'StarterUserSeeder::class';
-            }
-
-            if ($needsSeoSeeder) {
-                $seeders[] = 'StarterSeoSeeder::class';
             }
 
             $callBlock = $bodyIndent.'$this->call(['."\n";
 
-            foreach ($seeders as $seeder) {
+            foreach ($toAdd as $seeder) {
                 $callBlock .= $bodyIndent.'    '.$seeder.",\n";
             }
 
@@ -1154,6 +1156,16 @@ class InstallCommand extends Command
         $this->filesystem()->put($themePath, $contents);
     }
 
+    private function ensureFilamentUserModel(): void
+    {
+        $this->filesystem()->put(
+            app_path('Models/User.php'),
+            $this->renderStub($this->stubPath('models/User.stub'), []),
+        );
+
+        $this->info('User model updated with FilamentUser implementation.');
+    }
+
     private function richEditorMinHeightSelector(): string
     {
         return '.fi-fo-rich-editor .fi-fo-rich-editor-content';
@@ -1312,6 +1324,27 @@ class InstallCommand extends Command
 
         $this->runArtisan(['db:seed', '--class='.$seederClass, '--force']);
         $this->ensureDeveloperLoginsPlugin();
+    }
+
+    private function seedJobListings(): void
+    {
+        $seederClass = '\\Database\\Seeders\\JobListingSeeder';
+
+        if (! class_exists($seederClass)) {
+            $this->warn('Job listing seeder not found.');
+
+            return;
+        }
+
+        if (! $this->confirm('Seed sample job listings?', true)) {
+            return;
+        }
+
+        if (! $this->runMigrations()) {
+            return;
+        }
+
+        $this->runArtisan(['db:seed', '--class='.$seederClass, '--force']);
     }
 
     private function seedStarterSeo(): void

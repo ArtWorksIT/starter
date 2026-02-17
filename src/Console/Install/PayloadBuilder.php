@@ -487,6 +487,16 @@ class PayloadBuilder
             [],
         );
 
+        $jobFactory = $this->renderStub(
+            $this->stubPath('careers/factories/JobListingFactory.stub'),
+            [],
+        );
+
+        $jobSeeder = $this->renderStub(
+            $this->stubPath('careers/seeders/JobListingSeeder.stub'),
+            [],
+        );
+
         $jobModel = $this->renderStub(
             $this->stubPath('careers/models/JobListing.stub'),
             [],
@@ -537,6 +547,14 @@ class PayloadBuilder
         $payload = [
             $this->careersMigrationPath('create_job_listings_table') => [
                 'contents' => $jobMigration,
+                'allow_marker' => true,
+            ],
+            'database/factories/JobListingFactory.php' => [
+                'contents' => $jobFactory,
+                'allow_marker' => true,
+            ],
+            'database/seeders/JobListingSeeder.php' => [
+                'contents' => $jobSeeder,
                 'allow_marker' => true,
             ],
             'app/Models/JobListing.php' => [

@@ -43,9 +43,9 @@ use Illuminate\Database\Eloquent\Builder;
  *    drafts/scheduled records, and aborts with 403 for everyone else.
  *
  * 4. Filament resource — add TogglePublishAction to the edit page actions:
- *    Copy the stubs from stubs/publishable/ into your app, then:
  *    ```php
- *    // In your EditResource page:
+ *    use Artworksit\Starter\Filament\Actions\TogglePublishAction;
+ *
  *    protected function getHeaderActions(): array
  *    {
  *        return [
