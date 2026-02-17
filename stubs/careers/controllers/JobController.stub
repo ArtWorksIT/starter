@@ -12,7 +12,7 @@ class JobController extends Controller
     public function index(): View
     {
         $jobs = JobListing::query()
-            ->where('enabled', true)
+            ->published()
             ->orderBy('sort_order')
             ->orderByDesc('created_at')
             ->get();
@@ -24,8 +24,7 @@ class JobController extends Controller
     {
         $job = JobListing::query()
             ->where('slug', $slug)
-            ->where('enabled', true)
-            ->firstOrFail();
+            ->publishedOrFail();
 
         return view('careers.show', compact('job'));
     }

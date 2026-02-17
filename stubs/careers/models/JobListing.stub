@@ -5,6 +5,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasSeoMorph;
+use Artworksit\Starter\Concerns\Publishable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class JobListing extends Model
 {
     use HasSeoMorph;
+    use Publishable;
     use SoftDeletes;
 
     /**

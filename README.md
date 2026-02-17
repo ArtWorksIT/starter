@@ -106,6 +106,82 @@ The generated command creates `sitemap.xml` by browsing application routes. It a
 - `sitemap:generate --output` output file path (default `public/sitemap.xml`)
 - `sitemap:generate --force` overwrite existing sitemap file
 
+## Publishable
+
+The `Publishable` trait (and its Blueprint/Builder macros) ship with the package and are available immediately — no install step required.
+
+### What it provides
+
+- `$table->publishable()` — migration macro that adds `published_at TIMESTAMP NULL INDEX`
+- `$table->dropPublishable()` — drops the column in a rollback
+- `->published()` — Eloquent scope: only records with a past `published_at`
+- `->unpublished()` — scope: null or future `published_at`
+- `->draft()` — scope: null `published_at`
+- `->scheduled()` — scope: future `published_at`
+- `->publishedOrFail()` — Builder macro: fetches the record, returns it if published, lets Filament admins preview drafts/scheduled records, and aborts 403 for everyone else
+- `$model->publish()`, `->unpublish()`, `->schedule()` — lifecycle actions
+- `$model->publishStatus()` — returns `'draft'`, `'scheduled'`, `'published'`, or `'expired'`
+
+### Adding Publishable to a new model
+
+**1. Migration**
+
+```php
+Schema::create('my_things', function (Blueprint $table) {
+    $table->id();
+    // ...other columns...
+    $table->publishable(); // adds published_at TIMESTAMP NULL INDEX
+    $table->timestamps();
+});
+```
+
+**2. Model**
+
+```php
+use Artworksit\Starter\Concerns\Publishable;
+
+class MyThing extends Model
+{
+    use Publishable;
+}
+```
+
+**3. Controller**
+
+```php
+// Listing — public records only
+$items = MyThing::query()->published()->get();
+
+// Detail — public + admin preview, 403 for everyone else
+$item = MyThing::query()->where('slug', $slug)->publishedOrFail();
+```
+
+**4. Filament resource (optional)**
+
+Copy the stubs into your app once:
+
+```
+stubs/publishable/filament/actions/TogglePublishAction.stub
+    → app/Filament/Actions/TogglePublishAction.php
+
+stubs/publishable/filament/actions/concerns/ValidatesPublishable.stub
+    → app/Filament/Actions/Concerns/ValidatesPublishable.php
+```
+
+Then add the action to your Edit page:
+
+```php
+use App\Filament\Actions\TogglePublishAction;
+
+protected function getHeaderActions(): array
+{
+    return [
+        TogglePublishAction::make(),
+        Actions\DeleteAction::make(),
+    ];
+}
+```
+
 ## Configuration
 
 Publish the config file to customize package settings.

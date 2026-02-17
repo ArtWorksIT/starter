@@ -13,7 +13,7 @@ class BlogController extends Controller
     public function index(): View
     {
         $posts = BlogPost::query()
-            ->where('is_published', true)
+            ->published()
             ->orderByDesc('published_at')
             ->orderByDesc('created_at')
             ->paginate(10);
@@ -25,8 +25,7 @@ class BlogController extends Controller
     {
         $post = BlogPost::query()
             ->where('slug', $slug)
-            ->where('is_published', true)
-            ->firstOrFail();
+            ->publishedOrFail();
 
         return view('blog.show', compact('post'));
     }

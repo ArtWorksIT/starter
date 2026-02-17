@@ -5,6 +5,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasSeoMorph;
+use Artworksit\Starter\Concerns\Publishable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -17,7 +18,9 @@ class BlogPost extends Model implements HasMedia
     use HasSeoMorph;
     use HasTags;
     use InteractsWithMedia;
+    use Publishable;
     use SoftDeletes;
+
     /**
      * @var list<string>
      */
@@ -28,20 +31,7 @@ class BlogPost extends Model implements HasMedia
         'slug',
         'excerpt',
         'content',
-        'published_at',
-        'is_published',
     ];
-
-    /**
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'published_at' => 'datetime',
-            'is_published' => 'boolean',
-        ];
-    }
 
     public function registerMediaCollections(): void
     {
