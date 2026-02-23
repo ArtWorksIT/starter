@@ -18,10 +18,10 @@ class BuildTypographyCommand extends Command
     {
         $this->filesystem = $filesystem;
 
-        $csvInput = (string) $this->option('csv');
+        $csvInput = (string)$this->option('csv');
         $csvPath = $this->resolvePath($csvInput);
 
-        if (! $filesystem->exists($csvPath)) {
+        if (!$filesystem->exists($csvPath)) {
             $this->createDefaultCsv($csvPath);
             $this->info("Typography CSV created at {$csvInput}.");
             $this->line('Edit the CSV and re-run `php artisan starter:typography:build`.');
@@ -29,7 +29,7 @@ class BuildTypographyCommand extends Command
             return self::SUCCESS;
         }
 
-        if (! is_readable($csvPath)) {
+        if (!is_readable($csvPath)) {
             $this->error("CSV file is not readable: {$csvInput}.");
 
             return self::FAILURE;
@@ -97,19 +97,19 @@ class BuildTypographyCommand extends Command
 
     private function isAbsolutePath(string $path): bool
     {
-        if (Str::startsWith($path, ['/','\\'])) {
+        if (Str::startsWith($path, ['/', '\\'])) {
             return true;
         }
 
-        return (bool) preg_match('/^[A-Za-z]:\\\\/', $path);
+        return (bool)preg_match('/^[A-Za-z]:\\\\/', $path);
     }
 
     private function resolveScale(): ?float
     {
-        $scale = (float) $this->option('scale');
+        $scale = (float)$this->option('scale');
 
-        if (! $this->input->hasParameterOption('--scale')) {
-            $scale = (float) $this->ask('Scale factor for 3xl', (string) $scale);
+        if (!$this->input->hasParameterOption('--scale')) {
+            $scale = (float)$this->ask('Scale factor for 3xl', (string)$scale);
         }
 
         if ($scale <= 0) {
@@ -125,7 +125,7 @@ class BuildTypographyCommand extends Command
     {
         $directory = dirname($path);
 
-        if (! $this->filesystem->exists($directory)) {
+        if (!$this->filesystem->exists($directory)) {
             $this->filesystem->makeDirectory($directory, 0755, true);
         }
 
@@ -168,13 +168,13 @@ class BuildTypographyCommand extends Command
         $breakpoints = [];
 
         foreach ($header as $value) {
-            if (! $this->isNumericValue($value)) {
+            if (!$this->isNumericValue($value)) {
                 $this->error('CSV header must include only numeric breakpoint values.');
 
                 return null;
             }
 
-            $breakpoint = (float) $value;
+            $breakpoint = (float)$value;
 
             if ($breakpoint <= 0) {
                 $this->error('Breakpoint values must be positive numbers.');
@@ -206,13 +206,13 @@ class BuildTypographyCommand extends Command
             $values = [];
 
             foreach ($row as $value) {
-                if (! $this->isNumericValue($value)) {
+                if (!$this->isNumericValue($value)) {
                     $this->error('CSV contains non-numeric font values.');
 
                     return null;
                 }
 
-                $numericValue = (float) $value;
+                $numericValue = (float)$value;
 
                 if ($numericValue <= 0) {
                     $this->error('Font values must be positive numbers.');
@@ -251,10 +251,16 @@ class BuildTypographyCommand extends Command
         $sections[] = $this->renderBlock('@theme', $this->buildLines($tokens, $breakpoints[0]));
 
         foreach ($this->sortedBreakpointColumns($breakpoints) as $column) {
+
+            $correctMaxWidth = match ($column['index']) {
+                1 => 1024,
+                2 => 640
+            };
+
             $sections[] = $this->renderMediaBlock(
                 'max-width',
-                $column['breakpoint'],
-                $this->buildLines($tokens, $column['breakpoint'], $column['index']),
+                $correctMaxWidth,
+                $this->buildLines($tokens, $correctMaxWidth, $column['index']),
             );
         }
 
@@ -287,8 +293,8 @@ class BuildTypographyCommand extends Command
         $lines = [];
         $lines[] = "/* Source sizes from CSV file.";
         $lines[] = '';
-        $header = sprintf('   %-'. $nameWidth . 's', 'Token name');
-        $divider = sprintf('   %-'. $nameWidth . 's', str_repeat('-', strlen('Token name')));
+        $header = sprintf('   %-' . $nameWidth . 's', 'Token name');
+        $divider = sprintf('   %-' . $nameWidth . 's', str_repeat('-', strlen('Token name')));
 
         foreach ($breakpointLabels as $index => $label) {
             $width = $columnWidths[$index];
@@ -300,7 +306,7 @@ class BuildTypographyCommand extends Command
         $lines[] = $divider;
 
         foreach ($tokens as $token) {
-            $row = sprintf('   %-'. $nameWidth . 's', $token['name']);
+            $row = sprintf('   %-' . $nameWidth . 's', $token['name']);
 
             foreach ($token['values'] as $index => $value) {
                 $width = $columnWidths[$index] ?? strlen($this->formatCsvValue($value));
@@ -368,10 +374,10 @@ class BuildTypographyCommand extends Command
     private function formatBreakpoint(float $breakpoint): string
     {
         if (fmod($breakpoint, 1.0) === 0.0) {
-            return (string) ((int) $breakpoint) . 'px';
+            return (string)((int)$breakpoint) . 'px';
         }
 
-        return rtrim(rtrim((string) $breakpoint, '0'), '.') . 'px';
+        return rtrim(rtrim((string)$breakpoint, '0'), '.') . 'px';
     }
 
     private function formatVw(float $fontPx, float $breakpoint): string
@@ -392,7 +398,7 @@ class BuildTypographyCommand extends Command
         foreach ($rows as $row) {
             $key = $this->numberKey($row[0]);
 
-            if (! array_key_exists($key, $grouped)) {
+            if (!array_key_exists($key, $grouped)) {
                 $grouped[$key] = [
                     'default' => $row[0],
                     'rows' => [],
@@ -494,7 +500,7 @@ class BuildTypographyCommand extends Command
             ];
         }
 
-        usort($columns, fn (array $left, array $right): int => $right['breakpoint'] <=> $left['breakpoint']);
+        usort($columns, fn(array $left, array $right): int => $right['breakpoint'] <=> $left['breakpoint']);
 
         return $columns;
     }
@@ -516,7 +522,7 @@ class BuildTypographyCommand extends Command
         $markerEnd = '/* === END AUTO-GENERATED TYPOGRAPHY TOKENS === */';
         $block = $markerStart . "\n" . $css . "\n" . $markerEnd;
 
-        if (! $this->filesystem->exists($path)) {
+        if (!$this->filesystem->exists($path)) {
             $this->filesystem->put($path, $block . "\n");
 
             return;
