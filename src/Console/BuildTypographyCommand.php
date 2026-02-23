@@ -256,11 +256,11 @@ class BuildTypographyCommand extends Command
                 1 => 1024,
                 2 => 640
             };
-
+            
             $sections[] = $this->renderMediaBlock(
                 'max-width',
                 $correctMaxWidth,
-                $this->buildLines($tokens, $correctMaxWidth, $column['index']),
+                $this->buildLines($tokens, $column['breakpoint'], $column['index']),
             );
         }
 
