@@ -24,8 +24,8 @@
   ],
   "require": {
     "php": "^8.2",
-    "illuminate/support": "^12.0",
-    "intervention/image": "^3.0"
+    "illuminate/support": "^12.0|^13.0",
+    "intervention/image": "^3.0|^4.0"
   },
   "autoload": {
     "psr-4": {
