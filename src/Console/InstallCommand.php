@@ -865,7 +865,7 @@ class InstallCommand extends Command
             return str_replace(base_path() . "/", "", $existing[0]);
         }
 
-        $timestamp = new DateTimeImmutable()->format("Y_m_d_His");
+        $timestamp = (new DateTimeImmutable())->format("Y_m_d_His");
 
         return 'database/migrations/'.$timestamp.'_'.$suffix.'.php';
     }

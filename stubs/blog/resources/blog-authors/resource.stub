@@ -8,6 +8,7 @@ use App\Filament\Resources\BlogAuthorResource\Pages;
 use App\Models\BlogAuthor;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Set;
 use Filament\Schemas\Schema;
 use Filament\Resources\Resource;
 use Filament\Tables\Columns\TextColumn;
@@ -36,7 +37,7 @@ class BlogAuthorResource extends Resource
                 TextInput::make('name')
                     ->required()
                     ->live(debounce: 500)
-                    ->afterStateUpdated(fn ($state, callable $set) => $set('slug', \Illuminate\Support\Str::slug((string) $state)))
+                    ->afterStateUpdated(fn ($state, Set $set) => $set('slug', \Illuminate\Support\Str::slug((string) $state)))
                     ->columnSpanFull(),
                 TextInput::make('slug')
                     ->required()
