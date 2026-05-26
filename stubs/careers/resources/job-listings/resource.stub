@@ -18,6 +18,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Set;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
@@ -57,7 +58,7 @@ class JobListingResource extends Resource
                                 TextInput::make('title')
                                     ->required()
                                     ->live(debounce: 500)
-                                    ->afterStateUpdated(fn ($state, callable $set) => $set('slug', Str::slug((string) $state)))
+                                    ->afterStateUpdated(fn ($state, Set $set) => $set('slug', Str::slug((string) $state)))
                                     ->columnSpanFull(),
                                 TextInput::make('slug')
                                     ->required()
